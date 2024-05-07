@@ -1,0 +1,91 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="200" name="SPEED"/>
+<constant value="200" name="EDGE"/>
+<constant value="0" name="STOPPED"/>
+<constant value="1" name="LEFT"/>
+<constant value="2" name="RIGHT"/>
+<constant value="3" name="FORWARD"/>
+<constant value="3470" name="THR"/>
+<constant value="4" name="TURNING_LEFT"/>
+<constant value="5" name="TURNING_RIGHT"/>
+<constant value="100" name="BLOCKED"/>
+<constant value="3000" name="THR_W"/>
+<constant value="2000" name="THR_B"/>
+<constant value="6" name="FORWARDMAX"/>
+<constant value="-1" name="small_stopped"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var state=STOPPED
+var direction=0
+var test=0
+var counter=0
+
+
+motor.left.target=0
+motor.right.target=0
+
+onevent button.forward
+	state=FORWARD
+
+onevent prox 
+	 if state != STOPPED then                   
+   		if (state==FORWARD) then
+   			motor.left.target=SPEED
+   			motor.right.target=SPEED
+
+   		end
+   		if prox.ground.delta[0] &lt; EDGE and prox.ground.delta[1] > EDGE then
+	      state = RIGHT                          #  transition to RIGHT state
+	      motor.left.target = 0             	#  move right
+	      motor.right.target = SPEED
+         
+	    elseif prox.ground.delta[1] &lt; EDGE and  prox.ground.delta[0] > EDGE then
+	      state = LEFT
+	      timer.period[0]= 2500                          #  transition to RIGHT state
+	      motor.left.target = SPEED         	#  move right
+	      motor.right.target = 0
+	    end
+	    
+	    
+	    if prox.horizontal[0]&lt;THR_W and  prox.horizontal[1]>THR_W and prox.horizontal[2]>THR_W then
+	    	  state=TURNING_LEFT
+	    	  motor.left.target = -SPEED        	#  move left
+	    	  motor.right.target = SPEED
+	    	  timer.period[0]=790
+	    	  
+	    elseif prox.horizontal[0]>THR_W and  prox.horizontal[1]>THR_W and   prox.horizontal[2]&lt;THR_W then
+	   	state=TURNING_RIGHT
+	   	motor.left.target = SPEED        	#  move right
+	    	motor.right.target = -SPEED
+	   	timer.period[0]=790
+	    	
+	    end
+  end	
+onevent timer0
+if state == TURNING_LEFT or state == TURNING_RIGHT then
+	state = FORWARD
+end
+
+if state==LEFT and prox.ground.delta[0]&lt;EDGE and prox.ground.delta[1]&lt;EDGE then
+	    	state = small_stopped
+	    	motor.left.speed=100
+	    	motor.left.target=100
+	    	timer.period[0]=200
+	    end
+
+</node>
+
+
+</network>

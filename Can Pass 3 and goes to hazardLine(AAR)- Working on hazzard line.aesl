@@ -1,0 +1,288 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+<event size="7" name="ltstate"/>
+
+
+<!--list of constants-->
+<constant value="300" name="SPEED"/>
+<constant value="200" name="EDGE"/>
+<constant value="0" name="STOPPED"/>
+<constant value="1" name="LEFT"/>
+<constant value="2" name="RIGHT"/>
+<constant value="3" name="FORWARD"/>
+<constant value="500" name="THR"/>
+<constant value="4" name="TURNING_LEFT"/>
+<constant value="5" name="TURNING_RIGHT"/>
+<constant value="100" name="WAIT"/>
+<constant value="3000" name="THR_W"/>
+<constant value="800" name="THR_B"/>
+<constant value="6" name="FORWARDMAX"/>
+<constant value="3100" name="OB_THR"/>
+<constant value="750" name="TURN_PERIOD"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var state=STOPPED
+var direction=0
+var test=0
+var counter=0
+var lines = 0
+var tapeOrTable = 0
+
+var openSide
+# 0-> left
+# 1 -> right
+
+
+call leds.circle(0,0,0,0,0,0,0,0)
+
+
+
+motor.left.target=0
+motor.right.target=0
+
+
+onevent button.forward
+	state=FORWARD
+onevent button.backward
+	counter=0
+	state=STOPPED
+	motor.left.target=0
+	motor.right.target=0
+	timer.period[0]=200
+	call leds.circle(0,0,0,0,0,0,0,0)
+	call leds.top(0,0,0)
+	
+onevent prox 
+	
+	 if state != STOPPED then            	   
+#----------------------------------------------------------------------------#  	 	                                                                                                                                      
+   		if counter >=3 then
+				if (tapeOrTable == 0) and (prox.ground.delta[0] &lt;= EDGE) then
+				tapeOrTable = 1
+				elseif (tapeOrTable == 1) and (prox.ground.delta[0] > EDGE) then
+				tapeOrTable = 0
+				lines ++
+				end
+	   		end
+		   	if lines>=3 then
+		   		state=WAIT
+		   		counter++
+		   		motor.right.target=0
+		   		motor.left.target=0
+		   		call leds.top(0,0,255)
+		   		timer.period[0]=5000
+	   			
+	   		end
+   		if (state==FORWARD) then
+   			
+   			motor.left.target=SPEED
+   			motor.right.target=SPEED
+   			timer.period[0]=200
+   			
+   			if counter >=3 then
+				if (tapeOrTable == 0) and (prox.ground.delta[0] &lt;= EDGE) then
+				tapeOrTable = 1
+				elseif (tapeOrTable == 1) and (prox.ground.delta[0] > EDGE) then
+				tapeOrTable = 0
+				lines ++
+				end
+	   		end
+		   		if lines>1 then
+		   			state=WAIT
+		   			counter++
+		   			call leds.top(255,255,255)
+		   			timer.period[0]=5000
+	   			
+	   			end
+#  this peice of code only works 1 time. before reaching the line of the 1st barcode
+#----------------------------------------------------------------------------#    			
+#----------------------------------------------------------------------------#    
+# this part of the code workes after checking the barcode and going to the next barcode     		
+     	elseif (state==FORWARDMAX) then
+     			
+   				motor.left.target=300
+   				motor.right.target=300
+   				timer.period[0]=200
+   			
+   			if prox.horizontal[4] > 4000  then
+   				motor.left.target=-200
+   				motor.right.target=200
+   				timer.period[0]=100
+   			end
+   			
+   			
+   			 if prox.horizontal[0] > 3000 or prox.horizontal[1] > 300 then
+   				motor.left.target=100
+   				motor.right.target=-100
+   				timer.period[0]=100
+   			 end
+   			
+   			
+	   	elseif state==STOPPED then
+			    motor.left.target=0
+			    motor.right.target=0
+   		end
+#----------------------------------------------------------------------------#      		
+   		
+#----------------------------------------------------------------------------#   		
+#       line follow before barcode start here 
+   		if prox.ground.delta[0] &lt;= EDGE and prox.ground.delta[1] > EDGE and counter&lt;3 then
+	      state = RIGHT                          #  transition to RIGHT state
+	      motor.left.target = 0             	#  move right
+	      motor.right.target = SPEED
+	      timer.period[0]=200
+
+	    elseif prox.ground.delta[1] &lt;= EDGE and  prox.ground.delta[0] > EDGE and counter&lt;3                                                               then
+	      state = LEFT                          #  transition to RIGHT state
+	      motor.left.target = SPEED         	#  move right
+	      motor.right.target = 0
+	      timer.period[0]=200
+	    end
+#       line follow before barcode ends here 
+#----------------------------------------------------------------------------#
+
+
+#----------------------------------------------------------------------------#
+#       barcode reading start here	    
+#	    1st bar code (LL)
+	    if prox.horizontal[1]>prox.horizontal[2] and prox.horizontal[2]>THR_B and prox.horizontal[3]>THR_B and counter==0 then
+	    
+	    	  state=TURNING_LEFT
+#	    1st barcode(RR) 
+	    	elseif prox.horizontal[3]>prox.horizontal[2] and prox.horizontal[2]>1500 and prox.horizontal[1]> 350 and counter==0 then
+	    
+	    	  state=TURNING_RIGHT
+	    end	  
+	    	  
+#	    2nd barcode(LL)
+	    	if prox.horizontal[1]>THR_W and  prox.horizontal[2]>THR_B and prox.horizontal[3]>THR_B and  counter>0 then
+	    	  
+	   	state=TURNING_RIGHT
+	   	openSide=0
+	   	
+#	    2nd barcode(RR)	   	
+	   	elseif prox.horizontal[3]>3000 and prox.horizontal[2]>450 and prox.horizontal[1]>900 and counter>0 then
+	    
+	    	  state=TURNING_RIGHT
+	    	  openSide=1
+	   	end
+	   	
+	   		   	
+#	   	3rd barcode(LL)
+	    if prox.horizontal[1]>THR_B and  prox.horizontal[2]>THR_W and prox.horizontal[3]>THR_B and  counter>1 then
+	    
+	    
+	   	state=TURNING_RIGHT	
+#	   	elseif prox.horizontal[3]>prox.horizontal[2] and prox.horizontal[2]>1500 and prox.horizontal[1]> 350 and counter>1 then
+		elseif prox.horizontal[1]>THR_B and  prox.horizontal[2]>THR_B and prox.horizontal[3]>THR_W and  counter>1 then
+	    
+	    	  state=TURNING_RIGHT
+	    end		   	
+	    
+#	    barcode reading done here
+
+#----------------------------------------------------------------------------#
+	    
+#----------------------------------------------------------------------------#	    
+#	    turning instruction after reading the barcode	    
+	    
+	    if (state==TURNING_LEFT)  and counter ==0 then
+	    	  motor.left.target = -SPEED        	#  move right
+	    	  motor.right.target = SPEED
+	    	  timer.period[0]=TURN_PERIOD  # check the angle
+	    	  
+	    	elseif (state==TURNING_LEFT)  and counter >0 then
+	    	  motor.left.target = -SPEED        	#  move right
+	    	  motor.right.target = SPEED
+	    	  timer.period[0]=TURN_PERIOD  # check the angle
+	   
+	    	elseif ((state==TURNING_RIGHT)  and counter ==0) then
+	    	  motor.left.target = SPEED        	#  move right
+	    	  motor.right.target = -SPEED
+	    	  timer.period[0]=TURN_PERIOD # check the angle
+	    	  
+	    elseif ((state==TURNING_RIGHT)  and counter >0) then
+	    	  motor.left.target = SPEED        	#  move right
+	    	  motor.right.target = -SPEED
+	    	  timer.period[0]=TURN_PERIOD # check the angle
+	    end
+	    
+	 else
+	    	  
+	    	state=STOPPED
+	   	motor.left.target=0
+	   	motor.right.target=0
+#----------------------------------------------------------------------------#
+  end   #this end is for the if(!= STOPPED)	
+  	    
+onevent timer0
+	if (state==TURNING_LEFT) then
+	    timer.period[0]=0
+		counter++	
+		state=FORWARDMAX
+		motor.left.target = 300      	
+	    	motor.right.target = 300
+	    	
+	elseif(state==TURNING_RIGHT) then
+		counter++
+		state=FORWARDMAX
+		motor.left.target = 300      
+	    	motor.right.target = 300  
+	    		
+	end
+	if state==STOPPED then
+		state=STOPPED
+	   	motor.left.target=0
+	   	motor.right.target=0
+	end
+
+	#----------------------------------------------------------------------------#	
+#	NEW EDIT FOR TURNING TOWARDS HAZARD LINE
+	if counter == 3 then
+		call leds.circle(32,32,32,32,32,32,32,32)
+		motor.left.target = 300
+		motor.right.target = 300
+		timer.period[1] = 3750
+	
+	end
+	if state==WAIT then
+		lines=0
+		counter++
+		state=FORWARDMAX
+		motor.left.target = 300      	
+	    	motor.right.target = 300
+		
+	end
+	
+onevent timer1
+    if counter==3 then
+    		state = TURNING_LEFT                        
+		motor.left.target = 0         	
+		motor.right.target = SPEED
+		timer.period[0]=2000
+    end
+	if state==STOPPED then
+		state=STOPPED
+	   	motor.left.target=0
+	   	motor.right.target=0
+	   	end
+	
+	
+
+
+
+
+
+
+</node>
+
+
+</network>

@@ -1,0 +1,199 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="200" name="SPEED"/>
+<constant value="200" name="EDGE"/>
+<constant value="0" name="STOPPED"/>
+<constant value="1" name="LEFT"/>
+<constant value="2" name="RIGHT"/>
+<constant value="3" name="FORWARD"/>
+<constant value="500" name="THR"/>
+<constant value="4" name="TURNING_LEFT"/>
+<constant value="5" name="TURNING_RIGHT"/>
+<constant value="100" name="BLOCKED"/>
+<constant value="3000" name="THR_W"/>
+<constant value="800" name="THR_B"/>
+<constant value="6" name="FORWARDMAX"/>
+<constant value="3100" name="OB_THR"/>
+<constant value="890" name="TURN_PERIOD"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var state=STOPPED
+var direction=0
+var test=0
+var counter=0
+var ED=0
+var min
+var max
+var mean
+var tempState
+var openSide
+
+call leds.circle(0,0,0,0,0,0,0,0)
+
+
+
+motor.left.target=0
+motor.right.target=0
+
+onevent button.forward
+	state=FORWARD
+onevent button.backward
+	state=STOPPED
+	counter=0
+onevent prox 
+	ED=prox.ground.delta[0]
+	 if state != STOPPED then            	   
+	                                                                                                                                      
+   		if (state==FORWARD) then
+   			
+   			motor.left.target=SPEED
+   			motor.right.target=SPEED
+   			timer.period[0]=200
+   		elseif (state==FORWARDMAX) then
+   			motor.left.target=500
+   			motor.right.target=500
+   			timer.period[0]=200
+   		end
+   		
+   		 if prox.ground.delta[0] &lt;= EDGE and prox.ground.delta[1] > EDGE then
+	      state = RIGHT                          #  transition to RIGHT state
+	      motor.left.target = 0             	#  move right
+	      motor.right.target = SPEED
+	      timer.period[0]=200
+
+	    elseif prox.ground.delta[1] &lt;= EDGE and  prox.ground.delta[0] > EDGE then
+	      state = LEFT                          #  transition to RIGHT state
+	      motor.left.target = SPEED         	#  move right
+	      motor.right.target = 0
+	      timer.period[0]=200
+	    end
+	    
+	    if prox.horizontal[1]>prox.horizontal[2] and prox.horizontal[3]>THR_B and counter==0 then
+	    	  state=TURNING_LEFT
+	    	  
+	    	  
+	    	  elseif prox.horizontal[1]>THR_W and  prox.horizontal[2]>THR_B and prox.horizontal[3]>THR_B and  counter>0 then
+	   	state=TURNING_RIGHT
+	   	
+	   	elseif prox.horizontal[1]>THR_W and  prox.horizontal[2]>THR_B and prox.horizontal[3]>THR_B and  counter>0 then
+	   	state=TURNING_RIGHT
+	   	
+	    elseif prox.horizontal[1]>THR_B and  prox.horizontal[2]>THR_W and prox.horizontal[3]>THR_B and  counter>0 then
+	   	state=TURNING_RIGHT	
+	    end
+	    if (state==TURNING_LEFT)  and counter ==0 then
+	    	 motor.left.target = -SPEED        	#  move right
+	    	  motor.right.target = SPEED
+	    	  timer.period[0]=840  # This effect the robot
+	    elseif ((state==TURNING_RIGHT)  and counter >=1) then
+	    	  motor.left.target = SPEED        	#  move right
+	    	  motor.right.target = -SPEED
+	    	  timer.period[0]=870
+	    	
+	    end
+	   else
+	   	motor.left.target=0
+	   	motor.right.target=0
+	    
+#	    if state == LEFT and  prox.ground.delta[0] >= EDGE then
+#	      state = RIGHT                          #  transition to RIGHT state
+#	      motor.left.target = SPEED             	#  move right
+#	      motor.right.target = 0
+#	      
+#	    end
+#	    
+#	     if (state==FORWARD) and prox.ground.delta[1] &lt;= EDGE then
+#	      state = RIGHT                          #  transition to RIGHT state
+#	      motor.left.target = SPEED             	#  move right
+#	      motor.right.target = 0
+#	    end
+#	    
+#	    if state == RIGHT and prox.ground.delta[0] &lt; EDGE then
+#	      state = LEFT                           #  transition to LEFT state
+#	      motor.left.target = 0                  #  move left
+#	      motor.right.target = SPEED
+#	      
+#	    end  
+#	    
+#	    if (state==TURNING_LEFT) then
+#	    		
+#	    end
+	    
+#	     if (counter==0) and (prox.horizontal[1]>THR1) and (prox.horizontal[2]&lt;=THR2) and 		(prox.horizontal[2]&lt;=THR2) then  
+#	     
+#	     		state=TURNING_LEFT
+#	     		motor.left.target=-SPEED
+#	     		motor.right.target=SPEED
+#	     		counter++
+#	     		timer.period[0]=900
+#	     		end
+#	        if (counter==2) and (prox.horizontal[1]>THR1) and (prox.horizontal[2]&lt;=THR2) and 		(prox.horizontal[2]&lt;=THR2) then  
+#	 
+#	     		state=TURNING_RIGHT
+#	     		motor.left.target=SPEED
+#	     		motor.right.target=-SPEED
+#	     	
+#	     	
+#	     	timer.period[0]=900
+#	     end
+  end	
+
+onevent timer0
+	
+	
+	
+	if (state==TURNING_LEFT) then
+	timer.period[0]=0
+		counter++
+		state=FORWARDMAX
+		motor.left.target = 500      	#  move right
+	    	motor.right.target = 500
+	elseif(state==TURNING_RIGHT) then
+		counter++
+		state=FORWARDMAX
+		motor.left.target = 500      	#  move right
+	    	motor.right.target = 500  	
+	end
+	if (state==RIGHT) and (prox.horizontal[1]&lt;THR) then
+		state=LEFT
+	
+	elseif (state==LEFT) and (prox.horizontal[1]&lt;THR) then
+		state=RIGHT
+	elseif (prox.horizontal[1]>THR) then
+		state=TURNING_LEFT
+	end
+
+#	if (state==RIGHT) and (prox.horizontal[1]&lt;THR1) and (prox.horizontal[2]&lt;THR1) and (prox.horizontal[3]&lt;THR1) then
+#		state=LEFT
+#	end
+#	if (state==LEFT) then
+#		state=RIGHT
+#	end
+#
+#	if (state==TURNING_LEFT) then
+#		state=FORWARD
+#		counter++
+#	end
+#	if (state==TURNING_RIGHT) then
+#		state=FORWARD
+#	end
+	
+	
+
+
+
+</node>
+
+
+</network>

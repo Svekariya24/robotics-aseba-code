@@ -1,0 +1,115 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="0" name="STOPPED"/>
+<constant value="1" name="FORWARD"/>
+<constant value="2" name="LEFT"/>
+<constant value="3" name="RIGHT"/>
+<constant value="-1" name="BACKWARD"/>
+<constant value="4" name="RIGHTFAST"/>
+<constant value="400" name="SPEED"/>
+<constant value="2000" name="THR"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">#* CSCI 1108, Lab 8, Section B02
+Authors: Jahid Hassan, Ramisa Ahamed, Afif Asad, Shreel
+Purpose: move the robot so that it avoids the blocks and travels the maze safely without crashing
+*#
+
+## NOTE: We coded this for simulator. After passign the real physical test we need to change the code as real life scenario and simulator are different.
+
+
+ # RIGHTFAST is diffenent than RIGHT. RIGHTFAST is when the robot moves too close to the wall and needs to turn right immediately. In conclusion, in the RIGHT state, the robot will turn slowly, but in RIGHTFAST, the robot will turn right immediately
+ 
+var min
+var max
+var mean
+
+var state=STOPPED
+
+onevent button.forward
+  state=FORWARD
+	
+onevent button.backward
+  state=STOPPED
+
+sub turnLeft
+	motor.left.target=-SPEED
+	motor.right.target=SPEED
+	timer.period[0]=300
+	
+sub turnRight
+	motor.left.target=SPEED
+	motor.right.target=SPEED-100
+	timer.period[0]=300
+
+onevent prox
+if (state!=STOPPED) then
+	
+	#When the state is LEFT
+	if (state==LEFT) then
+		callsub turnLeft	
+	end
+	
+	#When the state is RIGHT
+	if (state==RIGHT) then
+		callsub turnRight
+	end
+	
+	#When the state is RIGHTFAST, move the robot to the right IMMEDIATELY as the robot is too close to the obstacle
+	
+	if (state==RIGHTFAST) then  
+		motor.left.target=SPEED
+		motor.right.target=-SPEED
+		timer.period[0]=100
+	end
+	
+	#When the state is FORWARD
+	if (state==FORWARD) then
+		motor.left.target=SPEED
+		motor.right.target=SPEED
+		timer.period[0]=400
+	end
+	
+	#When the state is BACKWARD
+	if (state==BACKWARD) then
+		motor.left.target=-SPEED
+		motor.right.target=-SPEED
+		timer.period[0]=500
+	end
+
+	if (prox.horizontal[4]>THR) or (prox.horizontal[3]>THR) then
+		state=LEFT
+	end
+	
+	#500 is added to the THR because it needs to be executed only when the middle sensor is very close (closer than THR) then the robot will move backward or else it can get stuck
+	if (prox.horizontal[0]>THR+500) then 
+		state=RIGHTFAST	
+	end
+	
+	if (prox.horizontal[2]>THR+500) then
+		state=BACKWARD	
+	end
+	
+else
+	motor.left.target=0
+	motor.right.target=0
+end
+
+onevent timer0
+	if (state!=STOPPED) then
+		state=RIGHT
+	end</node>
+
+
+</network>

@@ -1,0 +1,93 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var val
+
+#var min
+#var max
+var s1
+
+var sen1
+var sen2
+var mean
+var sen3
+var THR
+var s3
+var mi
+var ma
+var THR_MEAN
+
+onevent prox
+#	call math.stat(prox.horizontal[1:3],min,max,mean)
+		s1=prox.horizontal[1]
+		sen1=s1+951
+		THR=3000
+		THR_MEAN=2300
+		sen2=prox.horizontal[2]
+		s3=prox.horizontal[3]
+		sen3=s3+951
+		call math.stat(prox.horizontal[1:3],mi,ma,mean)
+		if (mean>THR_MEAN) and mean&lt;3600  then 
+			
+			if (sen1>THR) and (sen2&lt;THR) and(sen3&lt;THR) then
+			call leds.circle(0,0,0,0,0,0,0,32)
+			
+			elseif (sen2>THR) and (sen1&lt;THR) and(sen3&lt;THR) then
+				call leds.circle(32,0,0,0,0,0,0,0)
+			
+			elseif (sen3>THR) and (sen1&lt;THR) and(sen2&lt;THR) then
+				call leds.circle(0,32,0,0,0,0,0,0)	
+				
+			elseif (sen1>THR) and (sen2>THR) and(sen3&lt;THR) then
+				call leds.circle(32,0,0,0,0,0,0,32)
+				
+			elseif (sen1>THR) and (sen2&lt;THR) and(sen3>THR) then
+				call leds.circle(0,32,0,0,0,0,0,32)	
+				
+			elseif (sen1&lt;THR) and (sen2>THR) and(sen3>THR) then
+				call leds.circle(32,32,0,0,0,0,0,0)
+				
+			elseif (sen1>THR) and (sen2>THR) and(sen3>THR) then
+				call leds.circle(32,32,0,0,0,0,0,32)
+			
+			elseif (sen1&lt;THR) and (sen2&lt;THR) and(sen3&lt;THR) then
+				call leds.circle(0,0,0,0,0,0,0,0)	
+				end	
+		elseif (sen2&lt;THR_MEAN) then
+			motor.left.target=50
+			motor.right.target=50
+			call leds.circle(0,0,0,0,0,0,0,0)
+			timer.period[0]=20
+		else
+			call leds.circle(0,0,0,0,0,0,0,0)
+		end
+		
+onevent timer0
+	
+	if (sen2>3800) or (sen1>3800) or sen3>3800 then
+		motor.left.target=0
+		motor.right.target=0
+		timer.period[0]=0
+	end
+		
+		
+		
+	
+	
+
+</node>
+
+
+</network>

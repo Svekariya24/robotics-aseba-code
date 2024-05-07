@@ -1,0 +1,249 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="0" name="stopped"/>
+<constant value="300" name="speed"/>
+<constant value="100" name="EDGE"/>
+<constant value="1" name="forward"/>
+<constant value="2" name="right"/>
+<constant value="3" name="left"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II"># Ferin Miyani B00914896
+# Teerth Tejani
+#zirui Wang
+# Zhengtao Wang
+
+
+
+
+var state = stopped
+
+
+var count = 0
+var lastState = 0
+var maze = 0
+
+timer.period[0] = 0
+motor.left.target = 0
+motor.right.target = 0
+call leds.circle(0,0,0,0,0,0,0,0)
+call leds.buttons(0,0,0,0)
+
+onevent button.forward	
+	motor.right.target = speed
+	motor.left.target = speed
+	state = forward
+	
+	
+onevent button.backward
+	motor.right.target = 0
+	motor.left.target = 0
+	timer.period[0] = 0
+	state = stopped
+	count = 0
+	lastState = 0
+	maze = 0
+	
+onevent prox
+
+	if count == 8 then
+		if prox.ground.delta[0] &lt; EDGE and prox.ground.delta[1] &lt; EDGE then
+			motor.left.target = speed
+			motor.right.target = speed
+			timer.period[0] = 1100
+			count = 30
+		end
+	end
+
+	if count == 1 then
+		if prox.ground.delta[0] &lt; EDGE or prox.ground.delta[1] &lt; EDGE and state == forward then
+			if prox.horizontal[1] - prox.horizontal[3] > 150 then
+				maze = left
+			elseif prox.horizontal[3] - prox.horizontal[1] > 150 then
+				maze = right
+			end			
+		end
+	end
+
+	if count == 2 then
+		call leds.circle(32,0,32,0,32,0,32,0)
+	end
+
+	if state == forward then
+		motor.left.target = speed
+		motor.right.target = speed
+	end
+
+	if prox.ground.delta[0] &lt; EDGE and state == forward and count &lt; 1 then
+		motor.left.target = speed/2
+		motor.right.target = speed
+	end
+	
+	if prox.ground.delta[1] &lt; EDGE and state == forward and count &lt; 1 then
+		motor.right.target = speed/2
+		motor.left.target = speed
+	end
+	
+	
+	
+	if prox.horizontal[0] > 3700 and state == forward then
+		motor.right.target = -speed/4
+	end
+	
+	
+	if prox.horizontal[4] > 3700 and state == forward then
+		motor.left.target = -speed/4
+	end
+
+	if prox.ground.delta[0] &lt; EDGE and prox.ground.delta[1] &lt; EDGE and state == forward and count &lt; 1 then
+		motor.left.target = speed
+		motor.right.target = speed
+		call leds.circle(23,23,32,23,23,23,23,23)
+		if prox.horizontal[4] - prox.horizontal[0] > 20 then
+			motor.left.target = speed
+			motor.right.target = -speed
+		end
+		
+		if abs(prox.horizontal[0] - prox.horizontal[4]) > 20 then
+			motor.right.target = speed
+			motor.left.target = speed
+		end
+	end
+	
+	if abs(prox.horizontal[1] - prox.horizontal[3]) > 200 and (prox.ground.delta[0] &lt; EDGE or prox.ground.delta[1] &lt; EDGE) and prox.horizontal[2] > 2000 and state == forward then
+#		motor.left.target = 0
+#		motor.right.target = 0
+		if prox.horizontal[1] > prox.horizontal[3] and (prox.ground.delta[0] &lt; EDGE or prox.ground.delta[1] &lt; EDGE) and state == forward and count &lt; 1 then
+			state = left
+			motor.left.target = -speed
+			count++
+			motor.right.target = speed
+			timer.period[0] = 619
+		end
+		
+		if prox.horizontal[3] > prox.horizontal[1] and count &lt; 1 and (prox.ground.delta[0] &lt; EDGE or prox.ground.delta[1] &lt; EDGE) and state == forward  then
+			state = right
+			motor.left.target = speed
+			count++
+			motor.right.target = -speed
+			timer.period[0] = 619
+		end
+	end
+	
+	if count >= 1 and count &lt; 8 and (prox.horizontal[2] > 1200 and (prox.ground.delta[0] &lt; EDGE or prox.ground.delta[1] &lt; EDGE)) or (prox.horizontal[2] > 2700 and (prox.ground.delta[0] > EDGE or prox.ground.delta[1] > EDGE)) and state == forward then
+	
+		if lastState == right and count != 2 and count != 4 then
+			state = left
+			motor.right.target = speed
+			motor.left.target = -speed
+			count++
+			timer.period[0] = 619
+		end
+		
+		if lastState == left and count != 2 and count != 4 then
+			state = right
+			timer.period[0] = 619
+			motor.left.target = speed
+			count++
+			motor.right.target = -speed
+		end
+		
+		if lastState == left and count == 2 and state == forward then
+			state = left
+			motor.right.target = speed
+			motor.left.target = -speed
+			count++
+			timer.period[0] = 619
+		end
+		
+		if lastState == right and count == 2 and state == forward then
+			state = right
+			timer.period[0] = 619
+			motor.left.target = speed
+			motor.right.target = -speed
+			count++
+		end
+		
+		if maze == left and state == forward and count == 4 then
+			state = left
+			motor.left.target = -speed
+			motor.right.target = speed
+			count++
+			timer.period[0] = 619
+		elseif maze == right and state == forward and count == 4 then
+			state = right
+			motor.left.target = speed
+			motor.right.target = -speed
+			count++
+			timer.period[0] = 619
+		end
+	end
+	
+	
+	
+onevent timer0
+
+	if count == 6 and (state == right or state == left) then
+		call leds.buttons(32,0,0,32)
+		motor.left.target = speed
+		motor.right.target = speed
+		lastState = state
+		state = forward
+		timer.period[0] = 3000
+		count++	
+	elseif count == 7 and state == forward then
+		if lastState == right then
+			motor.right.target = -speed
+			motor.left.target = speed
+			state = right
+			call leds.buttons(32,0,32,0)
+			count++
+			timer.period[0] = 619
+		elseif lastState == left then
+			motor.right.target = speed
+			motor.left.target = -speed
+			call leds.buttons(32,0,32,0)	
+			timer.period[0] = 619
+			count++
+			state = left
+		end
+	elseif count == 8 then
+		state = forward
+		motor.left.target = speed
+		motor.right.target = speed
+		timer.period[0] = 0
+	end
+	
+	if count == 30 then
+		motor.left.target = 0
+		motor.right.target = 0
+		state = stopped
+		call leds.bottom.left(32,32,32)
+		call leds.bottom.right(32,32,32)
+		call leds.buttons(32,32,32,32)
+		call leds.circle(32,32,32,32,32,32,32,32)
+		call leds.top(32,32,32)
+	end
+
+	if (state == right or state == left) and count &lt; 6 then
+		motor.left.target = speed
+		motor.right.target = speed
+		call leds.circle(0,0,0,0,0,32,32,32)
+		timer.period[0] = 0
+		lastState = state
+		state = forward
+	end</node>
+
+
+</network>

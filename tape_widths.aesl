@@ -1,0 +1,89 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="0" name="STOPPED"/>
+<constant value="1" name="SEARCH"/>
+<constant value="2" name="BLACK"/>
+<constant value="3" name="GRAY"/>
+<constant value="500" name="TARGET"/>
+<constant value="1" name="BLACK_TH"/>
+<constant value="-1" name="GRAY_TH"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var state = STOPPED
+var width = 0    	 
+var reading 
+
+onevent button.forward
+  if button.forward == 0 then
+    state = SEARCH
+    motor.left.target = TARGET
+    motor.right.target = TARGET
+    callsub set_circle_leds
+  end
+  
+onevent button.backward
+  callsub stop
+  call leds.top(0, 0, 0)
+  
+onevent prox
+  if  state != STOPPED then
+    reading = (prox.ground.delta[0] + prox.ground.delta[1]) / 2
+    
+    when state == SEARCH and reading &lt;= BLACK_TH do 
+      state = BLACK 
+    end
+    
+    when state==SEARCH and reading&lt;=GRAY_TH and reading>BLACK_TH do 
+      state = GRAY 
+    end
+    
+    if state==BLACK then
+      if reading &lt;= BLACK_TH then
+        width++
+        call leds.top(0,0,32)
+      else
+        callsub stop
+      end
+    end
+    
+    if state==GRAY then
+      if reading &lt;= GRAY_TH then
+        width++
+        call leds.top(0,32,0)
+      else
+        callsub stop
+      end
+    end
+  end
+  
+sub stop
+  state = STOPPED
+  motor.left.target = 0
+  motor.right.target = 0
+  callsub set_circle_leds
+  width = 0
+  
+sub set_circle_leds
+  if width==0 then call leds.circle(0,0,0,0,0,0,0,0) end
+  if width==1 then call leds.circle(32,0,0,0,0,0,0,0) end
+  if width==2 then call leds.circle(32,32,0,0,0,0,0,0) end
+  if width==3 then call leds.circle(32,32,32,0,0,0,0,0) end
+  if width==4 then call leds.circle(32,32,32,32,0,0,0,0) end
+  if width==5 then call leds.circle(32,32,32,32,32,0,0,0) end
+  if width==6 then call leds.circle(32,32,32,32,32,32,0,0) end
+  if width==7 then call leds.circle(32,32,32,32,32,32,32,0) end
+  if width==8 then call leds.circle(32,32,32,32,32,32,32,32) end</node>
+
+
+</network>

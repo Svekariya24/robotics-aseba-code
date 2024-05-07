@@ -1,0 +1,147 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="200" name="SPEED"/>
+<constant value="400" name="EDGE"/>
+<constant value="0" name="STOPPED"/>
+<constant value="1" name="LEFT"/>
+<constant value="2" name="RIGHT"/>
+<constant value="3" name="FORWARD"/>
+<constant value="1400" name="THR"/>
+<constant value="4" name="TURNING_LEFT"/>
+<constant value="5" name="TURNING_RIGHT"/>
+<constant value="100" name="BLOCKED"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var state=STOPPED
+var sen1
+var sen2
+var sen3
+var direction=0
+var test=0
+call leds.circle(0,0,0,0,0,0,0,0)
+#*
+direction
+	-1 --> Left
+	0--> Forward
+	1 --> Right
+*#
+onevent button.forward
+	
+	callsub moveForward
+
+onevent prox 
+	sen1=prox.horizontal[1]
+	sen2=prox.horizontal[2]
+	sen3=prox.horizontal[3]
+	if (state!=STOPPED) then
+		if (state==FORWARD)  then
+			callsub moveForward
+		end
+		
+		if (prox.ground.delta[0]&lt;EDGE) then
+			state=LEFT
+			callsub moveLeft
+		end
+		if (prox.ground.delta[1]&lt;EDGE) then
+			state=RIGHT
+			callsub moveRight
+		end
+		if (prox.horizontal[1]&lt;EDGE) then
+			state=RIGHT
+			callsub moveRight
+		end
+		
+		if (state==RIGHT) then
+			callsub moveRight
+		end
+		if (state==LEFT) then
+			callsub moveLeft
+		end
+		
+		if (prox.horizontal[2]>THR) then
+			callsub stop
+		end
+		
+		if (state==TURNING_LEFT) then
+			callsub turnLEFT
+		end
+	else
+		motor.left.target=0
+		motor.right.target=0	
+	end
+	
+onevent timer0
+	if (state==RIGHT) then
+		state=LEFT
+	end
+	
+#	if (state==88) then
+#		state=FORWARD
+#	end
+	
+	timer.period[0]=0
+	
+	
+
+
+# Sub routines
+sub moveRight
+	motor.left.target=SPEED
+	motor.right.target=0
+	timer.period[0]=10
+
+sub moveLeft
+	motor.left.target=0
+	motor.right.target=SPEED
+	timer.period[0]=10	
+	
+sub moveForward
+	state=FORWARD
+	motor.left.target=SPEED
+	motor.right.target=SPEED
+	timer.period[0]=1000
+	
+sub stop
+	state=BLOCKED
+	motor.left.target=0
+	motor.right.target=0
+	callsub sense
+#	timer.period[0]=100
+	
+sub sense
+	state=TURNING_LEFT
+#	if (prox.horizontal[1]>3000) then
+#		call leds.circle(0,0,0,0,0,0,0,32)
+#		state=TURNING_LEFT
+		timer.period[0]=6000
+#	end
+#	if (sen2>3900) then
+#		call leds.circle(32,0,0,0,0,0,0,0)
+#	end
+#	if (sen3>3900) then
+#		call leds.circle(0,32,0,0,0,0,0,0)
+#		direction=TURNING_RIGHT
+#	end
+	
+sub turnLEFT
+	
+	state=88
+	motor.left.target=-SPEED
+	motor.right.target=SPEED
+	timer.period[0]=800
+
+</node>
+
+
+</network>

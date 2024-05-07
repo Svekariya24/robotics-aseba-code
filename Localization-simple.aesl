@@ -1,0 +1,69 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="32" name="LED"/>
+<constant value="500" name="THRESHOLD"/>
+<constant value="1" name="HIT"/>
+<constant value="0" name="MISS"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="1" name="thymio-II">var world[8]= [1,1,0,0,1,1,1,0]   
+var beliefs[8]        
+var i       
+var hit        
+var temp        
+var sum        
+
+onevent button.center        
+    when button.center == 0 do
+          call math.fill(beliefs, 1000/8)
+          callsub display_beliefs 
+    end
+
+onevent button.forward        
+    when button.forward == 0 do
+          callsub rotate          
+          callsub sense           
+          callsub display_beliefs 
+    end
+    
+sub display_beliefs				
+    call leds.circle( beliefs[0]/LED, beliefs[1]/LED, beliefs[2]/LED,
+  	                  beliefs[3]/LED, beliefs[4]/LED, beliefs[5]/LED, 
+  	                  beliefs[6]/LED, beliefs[7]/LED)
+
+sub rotate						
+    temp = beliefs[7]
+    for i in 7:1 step -1 do beliefs[i] = beliefs[i-1] end
+    beliefs[0] = temp
+
+sub sense						
+    if  prox.ground.delta[1] &lt; THRESHOLD  then hit = 1 else hit = 0 end
+    for i in 0:7 do
+          if  (hit==1 and world[i]==1) or (hit==0 and world[i]==0) then
+               call math.mul(beliefs[i], beliefs[i], HIT)
+          else
+               call math.mul(beliefs[i], beliefs[i], MISS)
+          end
+    end
+    callsub normalize 
+
+sub normalize	
+    sum = 0
+    for i in 0:7 do sum += beliefs[i] end
+    for i in 0:7 do call math.muldiv(beliefs[i], beliefs[i],1000,sum) end
+  
+</node>
+
+
+</network>
