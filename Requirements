@@ -1,0 +1,15 @@
+
+Each directory contains code related to a specific task or behavior. Navigate to the directory of interest and explore the code files. Additionally, refer to the comments within the code for detailed explanations of each function and variable.
+
+## Requirements
+- Aseba Studio: Install Aseba Studio on your computer to upload and run the code on supported robotic platforms.
+- Compatible Robot: This code is primarily designed for robots compatible with the Aseba platform, such as Thymio II. Ensure you have the necessary hardware to run the code.
+
+## Contributing
+Contributions to this repository are welcome! If you have additional examples, improvements to existing code, or bug fixes, feel free to open a pull request.
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+- Aseba Development Team: Thanks to the developers of Aseba for providing a powerful and user-friendly platform for programming educational robots.
